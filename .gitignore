@@ -1,6 +1,7 @@
 # Ignore the make file in the repo
 Makefile
 job.yaml
+*.yaml
 
 #Ignore Output logs
 /backup_logs

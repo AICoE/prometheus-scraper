@@ -10,8 +10,12 @@ import botocore
 import requests
 import json
 import os
-# requests.disable_warnings()
+
+# Disable SSL warnings
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+# Memory Management
+import gc
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 # Defining some macros
@@ -84,6 +88,7 @@ class PrometheusBackup:
         rv = s3.meta.client.put_object(Body=payload,
                                        Bucket=self.boto_settings['object_store'],
                                        Key=object_path)
+        gc.collect()
         if rv['ResponseMetadata']['HTTPStatusCode'] == 200:
             return object_path
         else:

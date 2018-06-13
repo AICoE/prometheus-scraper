@@ -148,6 +148,7 @@ class PrometheusBackup:
             tries = 0
             while tries < MAX_REQUEST_RETRIES:  # Retry code in case of errors
                 tries+=1
+                print("Retry Count: ",tries)
                 if response.status_code == 200:
                     data += response.json()['data']['result']
                     tries = MAX_REQUEST_RETRIES
@@ -167,7 +168,6 @@ class PrometheusBackup:
                             response.content
                         ))
                     else:
-                        print("Retry Count: ",tries)
                         sleep(CONNECTION_RETRY_WAIT_TIME)
 
             start += chunk_size

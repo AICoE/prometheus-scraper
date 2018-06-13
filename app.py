@@ -10,7 +10,10 @@ import botocore
 import requests
 import json
 import os
+# requests.disable_warnings()
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 # Defining some macros
 DATA_CHUNK_SIZE = 3600 # For 1 hour chunk size
 NET_DATA_SIZE = 3600 * 24 # To get the data for the past 24 hours
@@ -25,7 +28,7 @@ DATA_CHUNK_SIZE_LIST = {
     '1d' : 86400}
 
 CONNECTION_RETRY_WAIT_TIME = 1 # Time to wait before a retry in case of a connection error
-TOTAL_ERRORS = 0    # Count total connection errors after retries
+# TOTAL_ERRORS = 0    # Count total connection errors after retries
 
 # TODO: don't try to reconnect for each metric if initial connection to endpoint fails
 
@@ -35,6 +38,7 @@ class PrometheusBackup:
         self.url = url
         self.prometheus_host = urlparse(self.url).netloc
         self._all_metrics = None
+        self.connection_errors_count = 0 # Count total connection errors after retries
 
 
         if end_time:
@@ -110,13 +114,15 @@ class PrometheusBackup:
     def get_metric(self, name):
         if not name in self.all_metrics():
             raise Exception("{} is not a valid metric".format(name))
-
+        else:
+            print("Metric is valid.")
         if DATA_CHUNK_SIZE > NET_DATA_SIZE :
             print("Invalid Chunk Size")
             exit(1)
 
         num_chunks = int(NET_DATA_SIZE/DATA_CHUNK_SIZE) # Calculate the number of chunks using total data size and chunk size.
         # print(num_chunks)
+        print("Getting metric from Prometheus")
         metrics = self.get_metrics_from_prom(name, num_chunks)
         if metrics:
             return metrics
@@ -131,6 +137,7 @@ class PrometheusBackup:
         start = end_timestamp - NET_DATA_SIZE + chunk_size
         data = []
         for i in range(chunks):
+            print("Getting chunk: ", i)
             response = requests.get('{0}/api/v1/query'.format(self.url),    # using the query API to get raw data
                                     params={'query': name+'['+DATA_CHUNK_SIZE_STR[chunk_size]+']',
                                             'time': start
@@ -146,14 +153,14 @@ class PrometheusBackup:
                     tries = MAX_REQUEST_RETRIES
                 elif response.status_code == 504:
                     if tries >= MAX_REQUEST_RETRIES:
-                        TOTAL_ERRORS+=1
+                        self.connection_errors_count+=1
                         return False
                     else:
                         print("Retry Count: ",tries)
                         sleep(CONNECTION_RETRY_WAIT_TIME)    # Wait for a second before making a new request
                 else:
                     if tries >= MAX_REQUEST_RETRIES:
-                        TOTAL_ERRORS+=1
+                        self.connection_errors_count+=1
                         raise Exception("HTTP Status Code {} {} ({})".format(
                             response.status_code,
                             requests.status_codes._codes[response.status_code][0],
@@ -243,10 +250,12 @@ if __name__ == '__main__':
             if p.metric_already_stored(metric):
                 print("... already downloaded")
                 continue
+            # print("scraping metric: ",metric)
             values = p.get_metric(metric)
+            print("...metric collected")
             # print("Metrics-> ",metric,json.dumps(json.loads(values), indent = 4, sort_keys = True))
 
             print(p.store_metric_values(metric, values))
         except Exception as ex:
             print("Error: {}".format(ex))
-    print("Total number of connection errors: ", TOTAL_ERRORS)
+    print("Total number of connection errors: ", p.connection_errors_count)

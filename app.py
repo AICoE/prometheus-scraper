@@ -271,3 +271,4 @@ if __name__ == '__main__':
             print("Error: {}".format(ex))
     if DEBUG:
         print("Total number of connection errors: ", p.connection_errors_count)
+    exit(0)

@@ -15,6 +15,7 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 # Defining some macros
+DEBUG = False
 DATA_CHUNK_SIZE = 3600 # For 1 hour chunk size
 NET_DATA_SIZE = 3600 * 24 # To get the data for the past 24 hours
 MAX_REQUEST_RETRIES = 5
@@ -99,8 +100,9 @@ class PrometheusBackup:
             response = requests.get('{0}/api/v1/label/__name__/values'.format(self.url),
                                     verify=False, # Disable ssl certificate verification temporarily
                                     headers=self.headers)
-            # print("Headers -> ",self.headers)
-            # print("URL => ", response.url)
+            if DEBUG:
+                print("Headers -> ",self.headers)
+                print("URL => ", response.url)
             if response.status_code == 200:
                 self._all_metrics = response.json()['data']
             else:
@@ -114,7 +116,7 @@ class PrometheusBackup:
     def get_metric(self, name):
         if not name in self.all_metrics():
             raise Exception("{} is not a valid metric".format(name))
-        else:
+        elif DEBUG:
             print("Metric is valid.")
         if DATA_CHUNK_SIZE > NET_DATA_SIZE :
             print("Invalid Chunk Size")
@@ -122,7 +124,9 @@ class PrometheusBackup:
 
         num_chunks = int(NET_DATA_SIZE/DATA_CHUNK_SIZE) # Calculate the number of chunks using total data size and chunk size.
         # print(num_chunks)
-        print("Getting metric from Prometheus")
+        if DEBUG:
+            print("Getting metric from Prometheus")
+
         metrics = self.get_metrics_from_prom(name, num_chunks)
         if metrics:
             return metrics
@@ -137,7 +141,8 @@ class PrometheusBackup:
         start = end_timestamp - NET_DATA_SIZE + chunk_size
         data = []
         for i in range(chunks):
-            print("Getting chunk: ", i)
+            if DEBUG:
+                print("Getting chunk: ", i)
             response = requests.get('{0}/api/v1/query'.format(self.url),    # using the query API to get raw data
                                     params={'query': name+'['+DATA_CHUNK_SIZE_STR[chunk_size]+']',
                                             'time': start
@@ -148,7 +153,6 @@ class PrometheusBackup:
             tries = 0
             while tries < MAX_REQUEST_RETRIES:  # Retry code in case of errors
                 tries+=1
-                print("Try Count: ",tries)
                 if response.status_code == 200:
                     data += response.json()['data']['result']
                     tries = MAX_REQUEST_RETRIES
@@ -168,6 +172,7 @@ class PrometheusBackup:
                             response.content
                         ))
                     else:
+                        print("Retry Count: ",tries)
                         sleep(CONNECTION_RETRY_WAIT_TIME)
 
             start += chunk_size
@@ -209,17 +214,17 @@ if __name__ == '__main__':
                         help="List metrics from prometheus")
     parser.add_argument('metric', nargs='*',
                         help='Name of the metric, e.g. ALERTS - or --backup-all')
-    parser.add_argument('--chunk-size', type=str, default='1m',
+    parser.add_argument('--chunk-size', type=str, default='1h',
                         help='Size of the chunk downloaded at an instance. Accepted values are 1m, 1h, 1d default: %(default)s')
 
     args = parser.parse_args()
 
 
     # override from ENV
-    backup_all = os.getenv('PROM_BACKUP_ALL', args.backup_all)
     token = os.getenv('BEARER_TOKEN', args.token)
-    # print("Token => ",token)
     url = os.getenv('URL', args.url)
+    backup_all = os.getenv('PROM_BACKUP_ALL', args.backup_all)
+    # print("Token => ",token)
 
     p = PrometheusBackup(url=url, end_time=args.day, token=token)
 
@@ -258,4 +263,5 @@ if __name__ == '__main__':
             print(p.store_metric_values(metric, values))
         except Exception as ex:
             print("Error: {}".format(ex))
-    print("Total number of connection errors: ", p.connection_errors_count)
+    if DEBUG:
+        print("Total number of connection errors: ", p.connection_errors_count)

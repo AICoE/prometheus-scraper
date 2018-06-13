@@ -92,7 +92,8 @@ class PrometheusBackup:
 
     def all_metrics(self):
         if not self._all_metrics:
-            response = requests.get('{0}/api/v1/label/__name__/values'.format(self.url), verify=False, # Disable ssl certificate verification temporarily
+            response = requests.get('{0}/api/v1/label/__name__/values'.format(self.url),
+                                    verify=False, # Disable ssl certificate verification temporarily
                                     headers=self.headers)
             # print("Headers -> ",self.headers)
             # print("URL => ", response.url)
@@ -134,6 +135,7 @@ class PrometheusBackup:
                                     params={'query': name+'['+DATA_CHUNK_SIZE_STR[chunk_size]+']',
                                             'time': start
                                             },
+                                    verify=False, # Disable ssl certificate verification temporarily
                                     headers=self.headers)
             # print(response.url)
             tries = 0

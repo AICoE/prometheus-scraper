@@ -148,18 +148,19 @@ class PrometheusBackup:
         for i in range(chunks):
             if DEBUG:
                 print("Getting chunk: ", i)
-            response = requests.get('{0}/api/v1/query'.format(self.url),    # using the query API to get raw data
-                                    params={'query': name+'['+DATA_CHUNK_SIZE_STR[chunk_size]+']',
-                                            'time': start
-                                            },
-                                    verify=False, # Disable ssl certificate verification temporarily
-                                    headers=self.headers)
-            # print(response.url)
             tries = 0
             while tries < MAX_REQUEST_RETRIES:  # Retry code in case of errors
+                response = requests.get('{0}/api/v1/query'.format(self.url),    # using the query API to get raw data
+                                        params={'query': name+'['+DATA_CHUNK_SIZE_STR[chunk_size]+']',
+                                                'time': start
+                                                },
+                                        verify=False, # Disable ssl certificate verification temporarily
+                                        headers=self.headers)
+                # print(response.url)
                 tries+=1
                 if response.status_code == 200:
                     data += response.json()['data']['result']
+                    del response
                     tries = MAX_REQUEST_RETRIES
                 elif response.status_code == 504:
                     if tries >= MAX_REQUEST_RETRIES:

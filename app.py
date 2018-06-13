@@ -148,7 +148,7 @@ class PrometheusBackup:
             tries = 0
             while tries < MAX_REQUEST_RETRIES:  # Retry code in case of errors
                 tries+=1
-                print("Retry Count: ",tries)
+                print("Try Count: ",tries)
                 if response.status_code == 200:
                     data += response.json()['data']['result']
                     tries = MAX_REQUEST_RETRIES
@@ -209,7 +209,7 @@ if __name__ == '__main__':
                         help="List metrics from prometheus")
     parser.add_argument('metric', nargs='*',
                         help='Name of the metric, e.g. ALERTS - or --backup-all')
-    parser.add_argument('--chunk-size', type=str, default='1h',
+    parser.add_argument('--chunk-size', type=str, default='1m',
                         help='Size of the chunk downloaded at an instance. Accepted values are 1m, 1h, 1d default: %(default)s')
 
     args = parser.parse_args()

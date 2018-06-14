@@ -52,7 +52,7 @@ objects:
               run: "${APPLICATION_NAME}"
           spec:
             containers:
-            - image: 4n4nd/scrape_prometheus
+            - image: 4n4nd/scrape_prometheus:latest
               name: "${APPLICATION_NAME}"
               imagePullPolicy: Always
               resources: {}

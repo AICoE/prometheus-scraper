@@ -19,7 +19,7 @@ import gc
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 # Defining some macros
-DEBUG = False
+DEBUG = True
 DATA_CHUNK_SIZE = 3600 # For 1 hour chunk size
 NET_DATA_SIZE = 3600 * 24 # To get the data for the past 24 hours
 MAX_REQUEST_RETRIES = 5

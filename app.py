@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 import boto3
 import datetime
 from time import sleep
+from sys import getsizeof
 
 import botocore
 import requests
@@ -146,6 +147,7 @@ class PrometheusBackup:
         start = end_timestamp - NET_DATA_SIZE + chunk_size
         data = []
         for i in range(chunks):
+            gc.collect()
             if DEBUG:
                 print("Getting chunk: ", i)
             tries = 0
@@ -160,6 +162,9 @@ class PrometheusBackup:
                 tries+=1
                 if response.status_code == 200:
                     data += response.json()['data']['result']
+                    if DEBUG:
+                        print("Size of recent chunk = ",getsizeof(data))
+                        pass
                     del response
                     tries = MAX_REQUEST_RETRIES
                 elif response.status_code == 504:
@@ -267,6 +272,7 @@ if __name__ == '__main__':
             # print("Metrics-> ",metric,json.dumps(json.loads(values), indent = 4, sort_keys = True))
 
             print(p.store_metric_values(metric, values))
+            del values
         except Exception as ex:
             print("Error: {}".format(ex))
     if DEBUG:

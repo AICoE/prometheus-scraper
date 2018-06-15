@@ -16,7 +16,7 @@ parameters:
   required: true
 - name: SCHEDULE
   description: Schedule for the cronjob
-  value: '1 0 * * *'
+  value: '0 1 * * *'
 - name: BOTO_ACCESS_KEY
   description: Access key to connect to CEPH endpoint storage (or any similar S3 type storage)
   required: true

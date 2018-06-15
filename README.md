@@ -8,56 +8,84 @@ This python application has been written to scrape data from Prometheus and stor
 
 
 
-### Prerequisites
+### Installing prerequisites
 
 To run this application you will need to install several libraries listed in the requirements.txt.
 
-To install all the dependencies at once, run the following command:
+To install all the dependencies at once, run the following command when inside the directory:
 ```
 pip install -r requirements.txt
 ```
+After all the prequisites have been installed, open the Makefile and you will see a list of required and optional variables in the beginning.
+The required variables will be used to communicate with the Prometheus and Storage end points.
 
-### Installing
+Populating the Makefile is the most important step, as you can use this run the application on OpenShift, Docker or your local machine.
 
-A step by step series of examples that tell you how to get a development env running
+### Running on a local machine
 
-Say what the step will be
+After setting up the credentials in your Makefile, to test if Prometheus credentials are correct, run the following command:
+```
+make run_list_metrics
+```
+This will list all the metrics that are stored on the Prometheus host.
+
+Next, to backup the previous day's metrics data to a long term block storage, run the following command:
+```
+make run_backup_all_metrics
+```
+## Running on Docker
+After populating all the required variables, set the name for your docker app by changing the docker_app_name variable. Then run the following command to build the docker image.
+```
+make docker_build
+```
+This command uses the Dockerfile included in the repository to build an image. So you can use it to customize how the image is built.
+
+Run the following command to test if the docker image is functional:
+```
+make docker_test
+```
+Your output should be something like below:
+```
+usage: app.py [-h] [--day DAY] [--url URL] [--token TOKEN] [--backup-all]
+              [--list-metrics] [--chunk-size CHUNK_SIZE]
+              [metric [metric ...]]
+
+Backup Prometheus metrics
+
+positional arguments:
+  metric                Name of the metric, e.g. ALERTS - or --backup-all
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --day DAY             the day to backup in YYYYMMDD (defaults to previous
+                        day)
+  --url URL             URL of the prometheus server default:
+                        https://prometheus-openshift-devops-monitor.1b7d.free-
+                        stg.openshiftapps.com
+  --token TOKEN         Bearer token for prometheus
+  --backup-all          Backup all metrics
+  --list-metrics        List metrics from prometheus
+  --chunk-size CHUNK_SIZE
+                        Size of the chunk downloaded at an instance. Accepted
+                        values are 1m, 1h, 1d default: 1h
 
 ```
-Give the example
+
+## Deploying on OpenShift
+
+* ### Deploying a single time running pod:
+  In the Makefile set up the required variables, and then run the following command:
 ```
-
-And repeat
-
+make oc_job_run
 ```
-until finished
-```
+This will run a pod on openshift which will backup a day's (24 Hours) of data for all the metrics from the specified Prometheus Host to the block storage.
 
-End with an example of getting some data out of the system or using it for a little demo
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
+* ### Deploying a scheduled cronjob:
+  In the Makefile set up the required variables, and also set the cron_schedule variable to your desired frequency to run the application, (if you need help with this variable see https://en.wikipedia.org/wiki/Cron), then run the following command:
+  ```
+  make oc_cron_job_run
+  ```
+  This will schedule a cronjob on openshift that will backup a day's (24 Hours) data for all the metrics from the specified prometheus host to the given block storage service.
 
 ## Built With
 

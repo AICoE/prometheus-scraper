@@ -21,7 +21,7 @@ import gc
 
 
 # Defining some macros
-DEBUG = True
+DEBUG = False
 DATA_CHUNK_SIZE = 3600 # For 1 hour chunk size
 NET_DATA_SIZE = 3600 * 24 # To get the data for the past 24 hours
 MAX_REQUEST_RETRIES = 5
@@ -107,7 +107,7 @@ class PrometheusBackup:
     def metric_filename(self, name):
         # Adds a timestamp to the filename before it is stored in ceph
         directory_name = self.end_time.strftime("%Y%m%d")
-        timestamp = self.end_time.strftime("%Y%m%d%H%M")
+        timestamp = self.end_time.strftime("%Y%m%d")#%H%M")
         object_path = self.prometheus_host + '/' + name + '/' + directory_name + '/' + timestamp + '.json.bz2'
         return object_path
 

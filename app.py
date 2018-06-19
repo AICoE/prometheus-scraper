@@ -14,24 +14,19 @@ import os
 
 # Disable SSL warnings
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 # Memory Management
 import gc
 
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
 # Defining some macros
-DEBUG = False
+DEBUG = True
 DATA_CHUNK_SIZE = 3600 # For 1 hour chunk size
 NET_DATA_SIZE = 3600 * 24 # To get the data for the past 24 hours
 MAX_REQUEST_RETRIES = 5
-DATA_CHUNK_SIZE_STR = {
-    60 : '1m',
-    3600 : '1h',
-    86400 : '1d'}
-DATA_CHUNK_SIZE_LIST = {
-    '1m' : 60,
-    '1h' : 3600,
-    '1d' : 86400}
+
+
 
 CONNECTION_RETRY_WAIT_TIME = 1 # Time to wait before a retry in case of a connection error
 # TOTAL_ERRORS = 0    # Count total connection errors after retries
@@ -45,7 +40,21 @@ class PrometheusBackup:
         self.prometheus_host = urlparse(self.url).netloc
         self._all_metrics = None
         self.connection_errors_count = 0 # Count total connection errors after retries
-
+        self.data_chunk_size = '1m'
+        self.DATA_CHUNK_SIZE_STR = {
+            60 : '1m',
+            1800 : '30m',
+            3600 : '1h',
+            21600: '6h',
+            43200: '12h',
+            86400 : '1d'}
+        self.DATA_CHUNK_SIZE_LIST = {
+            '1m' : 60,
+            '30m': 1800,
+            '1h' : 3600,
+            '6h' : 21600,
+            '12h': 43200,
+            '1d' : 86400}
 
         if end_time:
             end_time = str(end_time)
@@ -89,7 +98,7 @@ class PrometheusBackup:
         rv = s3.meta.client.put_object(Body=payload,
                                        Bucket=self.boto_settings['object_store'],
                                        Key=object_path)
-        gc.collect()
+        gc.collect() # Manually call the garbage collector
         if rv['ResponseMetadata']['HTTPStatusCode'] == 200:
             return object_path
         else:
@@ -97,8 +106,9 @@ class PrometheusBackup:
 
     def metric_filename(self, name):
         # Adds a timestamp to the filename before it is stored in ceph
-        timestamp = self.end_time.strftime("%Y%m%d")
-        object_path = self.prometheus_host + '/' + name + '/' + timestamp + '.json.bz2'
+        directory_name = self.end_time.strftime("%Y%m%d")
+        timestamp = self.end_time.strftime("%Y%m%d%H%M")
+        object_path = self.prometheus_host + '/' + name + '/' + directory_name + '/' + timestamp + '.json.bz2'
         return object_path
 
     def all_metrics(self):
@@ -128,7 +138,7 @@ class PrometheusBackup:
             print("Invalid Chunk Size")
             exit(1)
 
-        num_chunks = int(NET_DATA_SIZE/DATA_CHUNK_SIZE) # Calculate the number of chunks using total data size and chunk size.
+        num_chunks = int(NET_DATA_SIZE/self.DATA_CHUNK_SIZE_LIST[self.data_chunk_size]) # Calculate the number of chunks using total data size and chunk size.
         # print(num_chunks)
         if DEBUG:
             print("Getting metric from Prometheus")
@@ -143,7 +153,7 @@ class PrometheusBackup:
 
         # start = self.start_time.timestamp()
         end_timestamp = self.end_time.timestamp()
-        chunk_size = DATA_CHUNK_SIZE
+        chunk_size = self.DATA_CHUNK_SIZE_LIST[self.data_chunk_size]
         start = end_timestamp - NET_DATA_SIZE + chunk_size
         data = []
         for i in range(chunks):
@@ -153,7 +163,7 @@ class PrometheusBackup:
             tries = 0
             while tries < MAX_REQUEST_RETRIES:  # Retry code in case of errors
                 response = requests.get('{0}/api/v1/query'.format(self.url),    # using the query API to get raw data
-                                        params={'query': name+'['+DATA_CHUNK_SIZE_STR[chunk_size]+']',
+                                        params={'query': name+'['+self.data_chunk_size+']',
                                                 'time': start
                                                 },
                                         verify=False, # Disable ssl certificate verification temporarily
@@ -226,22 +236,23 @@ if __name__ == '__main__':
     parser.add_argument('metric', nargs='*',
                         help='Name of the metric, e.g. ALERTS - or --backup-all')
     parser.add_argument('--chunk-size', type=str, default='1h',
-                        help='Size of the chunk downloaded at an instance. Accepted values are 1m, 1h, 1d default: %(default)s')
+                        help='Size of the chunk downloaded at an instance. Accepted values are 30m, 1h, 6h, 12h, 1d default: %(default)s')
 
     args = parser.parse_args()
-
 
     # override from ENV
     token = os.getenv('BEARER_TOKEN', args.token)
     url = os.getenv('URL', args.url)
     backup_all = os.getenv('PROM_BACKUP_ALL', args.backup_all)
+
     # print("Token => ",token)
 
     p = PrometheusBackup(url=url, end_time=args.day, token=token)
 
-    if args.chunk_size not in DATA_CHUNK_SIZE_LIST:
+    if args.chunk_size not in p.DATA_CHUNK_SIZE_LIST:
         print("Invalid Chunk Size.", args.chunk_size)
-        exit()
+        exit(1)
+    p.data_chunk_size = args.chunk_size
 
     if args.list_metrics:
         metrics = p.all_metrics()

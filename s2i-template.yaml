@@ -1,0 +1,100 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Build
+  metadata:
+    annotations:
+      openshift.io/build-config.name: scrapeprometheus
+      openshift.io/build.number: "1"
+      openshift.io/build.pod-name: scrapeprometheus-1-build
+    creationTimestamp: null
+    labels:
+      build: scrapeprometheus
+      buildconfig: scrapeprometheus
+      openshift.io/build-config.name: scrapeprometheus
+      openshift.io/build.start-policy: Serial
+    name: scrapeprometheus-1
+    ownerReferences:
+    - apiVersion: build.openshift.io/v1
+      controller: true
+      kind: BuildConfig
+      name: scrapeprometheus
+      uid: 606f70d6-7302-11e8-9d37-fa163e27030f
+  spec:
+    nodeSelector: null
+    output:
+      pushSecret:
+        name: builder-dockercfg-tg5hr
+      to:
+        kind: ImageStreamTag
+        name: scrapeprometheus:latest
+    postCommit: {}
+    resources: {}
+    revision:
+      git:
+        author:
+          email: asanmukh@redhat.com
+          name: Anand Sanmukhani
+        commit: 935a6a9ce12780ae5f5d764cd438daee423ef1ee
+        committer:
+          email: asanmukh@redhat.com
+          name: Anand Sanmukhani
+        message: add some memory management
+      type: Git
+    serviceAccount: builder
+    source:
+      git:
+        uri: https://github.com/4n4nd/scrape_prometheus.git
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: DockerImage
+          name: centos/python-36-centos7@sha256:89971c7f8809f889e71de7d565c7e001065ceed8f0cd6181d88cf5672ca75c48
+      type: Source
+    triggeredBy:
+    - imageChangeBuild:
+        fromRef:
+          kind: ImageStreamTag
+          name: python-36-centos7:latest
+        imageID: centos/python-36-centos7@sha256:89971c7f8809f889e71de7d565c7e001065ceed8f0cd6181d88cf5672ca75c48
+      message: Image change
+  status:
+    config:
+      name: scrapeprometheus
+    output:
+      to:
+        imageDigest: sha256:692b7e5f58f5c25cb90a06ff9fc13ac5165cbe88c6f655b07ad76c755ab0bf24
+    outputDockerImageReference: docker-registry.default.svc:5000/mhild-test/scrapeprometheus:latest
+    phase: New
+    stages:
+    - durationMilliseconds: 363
+      name: FetchInputs
+      startTime: 2018-06-18T14:17:51Z
+      steps:
+      - durationMilliseconds: 363
+        name: FetchGitSource
+        startTime: 2018-06-18T14:17:51Z
+    - durationMilliseconds: 408
+      name: CommitContainer
+      startTime: 2018-06-18T14:18:02Z
+      steps:
+      - durationMilliseconds: 408
+        name: CommitContainer
+        startTime: 2018-06-18T14:18:02Z
+    - durationMilliseconds: 7350
+      name: Assemble
+      startTime: 2018-06-18T14:17:56Z
+      steps:
+      - durationMilliseconds: 7350
+        name: AssembleBuildScripts
+        startTime: 2018-06-18T14:17:56Z
+    - durationMilliseconds: 18910
+      name: PushImage
+      startTime: 2018-06-18T14:18:03Z
+      steps:
+      - durationMilliseconds: 18910
+        name: PushImage
+        startTime: 2018-06-18T14:18:03Z
+kind: List
+metadata: {}

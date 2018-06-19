@@ -1,0 +1,49 @@
+{
+  "kind": "Job",
+  "apiVersion": "batch/v1",
+  "metadata": {
+    "name": "scrape-prometheus-test-2"
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "labels": {
+          "name": "scrape-prometheus-test-2"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "scrape-prometheus-cont-1",
+            "image": "scrape-prometheus",
+            "ports": [
+              {
+                "containerPort": 8080,
+                "protocol": "TCP"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "replicas": 1,
+    "triggers": [
+      {
+        "type": "ConfigChange"
+      },
+      {
+        "type": "ImageChange",
+        "imageChangeParams": {
+          "automatic": true,
+          "containerNames": [
+            "scrape-prometheus-cont-1"
+          ],
+          "from": {
+            "kind": "ImageStreamTag",
+            "name": "scrape-prometheus:latest"
+          }
+        }
+      }
+    ]
+  }
+}

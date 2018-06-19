@@ -12,6 +12,7 @@ cron_schedule=0 1 * * *
 oc_single_job_app_name=scrape-prometheus
 oc_cronjob_app_name=scrape-prometheus-cronjob-test
 docker_app_name=scrape_prometheus
+oc_image_name=scrape-prometheus
 
 docker_build:
 	docker build -t ${docker_app_name} .
@@ -26,7 +27,8 @@ oc_job_run:
 			--param BOTO_ACCESS_KEY="${block_storage_access_key}" \
 			--param BOTO_SECRET_KEY="${block_storage_secret_key}" \
 			--param BOTO_OBJECT_STORE="${block_storage_bucket_name}" \
-			--param BOTO_STORE_ENDPOINT="${block_storage_endpoint_url}" \
+			--param BOTO_STORE_ENDPOINT="${block_storage_endpoint_url}"
+	# oc new-app --file=./scrape-prometheus-job-template-test2.json
 
 docker_run:
 	docker run -ti --rm \
@@ -71,5 +73,8 @@ run_backup_all_metrics:
 	BOTO_STORE_ENDPOINT=${block_storage_endpoint_url} \
 	python3 ./app.py --backup-all
 
-oc_delete:
-	oc delete cronjob ${oc_cronjob_app_name}
+oc_job_delete:
+	oc delete all -l app=${oc_single_job_app_name}
+
+oc_cronjob_delete:
+	oc delete all -l app=${oc_cronjob_app_name}

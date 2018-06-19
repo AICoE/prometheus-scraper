@@ -2,15 +2,7 @@ apiVersion: v1
 kind: Template
 metadata:
   name: scrape-prometheus-job
-parameters:
-- description: The name for job
-  from: 'scrape-prometheus-[a-z0-9]{4}'
-  generate: expression
-  name: APPLICATION_NAME
-  required: true
-- name: GIT_URI
-  value: "https://github.com/4n4nd/scrape_prometheus.git"
-  required: true
+
 
 objects:
 
@@ -63,7 +55,15 @@ objects:
       type: ImageChange
     - type: ConfigChange
 
-
+parameters:
+- description: The name for job
+  from: 'scrape-prometheus-[a-z0-9]{4}'
+  generate: expression
+  name: APPLICATION_NAME
+  required: true
+- name: GIT_URI
+  value: "https://gitlab.cee.redhat.com/asanmukh/scrape_prometheus"
+  required: true
 # - apiVersion: batch/v1
 #   kind: Job
 #   metadata:

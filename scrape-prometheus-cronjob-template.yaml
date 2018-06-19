@@ -120,7 +120,7 @@ parameters:
   name: APPLICATION_NAME
   required: true
 - name: GIT_URI
-  value: "https://github.com/4n4nd/scrape_prometheus.git"
+  value: "https://gitlab.cee.redhat.com/asanmukh/scrape_prometheus"
   required: true
 - name: URL
   description: URL of prometheus server

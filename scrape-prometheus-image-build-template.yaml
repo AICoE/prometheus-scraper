@@ -1,11 +1,9 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: scrape-prometheus-job
-
+  name: scrape-prometheus-cronjob
 
 objects:
-
 - apiVersion: v1
   kind: ImageStream
   metadata:
@@ -54,10 +52,10 @@ objects:
     - imageChange: {}
       type: ImageChange
     - type: ConfigChange
+    - gitlab:
+        secretReference:
+          name: "scrape-prometheus-githook"
       type: "GitLab"
-        gitlab:
-          secretReference:
-            name: "scrape-prometheus-githook"
 
 parameters:
 - description: The name for job
@@ -66,7 +64,7 @@ parameters:
   name: APPLICATION_NAME
   required: true
 - name: GIT_URI
-  value: "https://gitlab.cee.redhat.com/asanmukh/scrape_prometheus"
+  value: "https://gitlab.cee.redhat.com/asanmukh/scrape_prometheus.git"
   required: true
 # - apiVersion: batch/v1
 #   kind: Job

@@ -73,5 +73,5 @@ parameters:
   description: The URL to connect to the CEPH storage (or any similar S3 type storage)
   required: true
 - name: GIT_URI
-  value: "https://gitlab.cee.redhat.com/asanmukh/scrape_prometheus"
+  value: "https://gitlab.cee.redhat.com/asanmukh/scrape_prometheus.git"
   required: true

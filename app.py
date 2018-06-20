@@ -146,7 +146,7 @@ class PrometheusBackup:
         #     print("Invalid Chunk Size")
         #     exit(1)
 
-        num_chunks = int(NET_DATA_SIZE/self.DATA_CHUNK_SIZE_LIST[self.data_chunk_size]) # Calculate the number of chunks using total data size and chunk size.
+        num_chunks = int(self.DATA_CHUNK_SIZE_LIST[self.stored_data_range]/self.DATA_CHUNK_SIZE_LIST[self.data_chunk_size]) # Calculate the number of chunks using total data size and chunk size.
         # print(num_chunks)
         if DEBUG:
             print("Getting metric from Prometheus")
@@ -207,6 +207,8 @@ class PrometheusBackup:
             gc.collect() # Garbage collect to save Memory
             if DEBUG:
                 print("Getting chunk: ", i)
+                print("Start Time: ",datetime.datetime.fromtimestamp(start))
+
             tries = 0
             while tries < MAX_REQUEST_RETRIES:  # Retry code in case of errors
                 response = requests.get('{0}/api/v1/query'.format(self.url),    # using the query API to get raw data
@@ -215,13 +217,19 @@ class PrometheusBackup:
                                                 },
                                         verify=False, # Disable ssl certificate verification temporarily
                                         headers=self.headers)
-                # print(response.url)
+                if DEBUG:
+                    print(response.url)
+                    pass
+
                 tries+=1
                 if response.status_code == 200:
                     data += response.json()['data']['result']
 
                     if DEBUG:
-                        print("Size of recent chunk = ",getsizeof(data))
+                        # print("Size of recent chunk = ",getsizeof(data))
+                        # print(data)
+                        print(datetime.datetime.fromtimestamp(response.json()['data']['result'][0]['values'][0][0]))
+                        print(datetime.datetime.fromtimestamp(response.json()['data']['result'][0]['values'][-1][0]))
                         pass
 
                     del response
@@ -267,6 +275,10 @@ class PrometheusBackup:
             else:
                 raise
         else:
+            if DEBUG:
+                print(object_path)
+                pass
+
             return True
 
 if __name__ == '__main__':
@@ -290,6 +302,8 @@ if __name__ == '__main__':
                         help='Size of the data stored to the storage endpoint. For example, 6h will divide the 24 hour data in 4 parts of 6 hours. Accepted values are 30m, 1h, 6h, 12h, 1d default: %(default)s')
     parser.add_argument('--debug', action='store_true',
                         help="Enable Debug Mode")
+    parser.add_argument('--replace', action='store_true',
+                        help="Replace existing file with the current")
 
     args = parser.parse_args()
 
@@ -335,24 +349,29 @@ if __name__ == '__main__':
 
     num_of_file_parts = int(NET_DATA_SIZE/(p.DATA_CHUNK_SIZE_LIST[p.stored_data_range]))
     temp_end_time = p.end_time
+
     for metric in metrics:
         try:
             print("\n")
             print(metric)
             p.end_time = temp_end_time
-            for parts in range(num_of_file_parts):
-                p.end_time = datetime.datetime.fromtimestamp(p.end_time.timestamp() - int(p.DATA_CHUNK_SIZE_LIST[p.stored_data_range]))
-                pass
-                if p.metric_already_stored(metric):
-                    print("Part {}/{}... already downloaded".format(parts+1, num_of_file_parts))
-                    continue
-                # print("scraping metric: ",metric)
-                values = p.get_metric(metric)
-                print("Part {}/{}...metric collected".format(parts+1, num_of_file_parts))
-                # print("Metrics-> ",metric,json.dumps(json.loads(values), indent = 4, sort_keys = True))
 
-                print(p.store_metric_values(metric, values))
-                del values
+            for parts in range(num_of_file_parts):
+                # if DEBUG:
+                    # print("This End Time = ",p.end_time)
+
+                if p.metric_already_stored(metric) and not args.replace:
+                    print("Part {}/{}... already downloaded".format(parts+1, num_of_file_parts))
+                else:
+                    # print("scraping metric: ",metric)
+                    values = p.get_metric(metric)
+                    print("Part {}/{}...metric collected".format(parts+1, num_of_file_parts))
+                    # print("Metrics-> ",metric,json.dumps(json.loads(values), indent = 4, sort_keys = True))
+
+                    print(p.store_metric_values(metric, values))
+                    del values
+                p.end_time = datetime.datetime.fromtimestamp(p.end_time.timestamp() - int(p.DATA_CHUNK_SIZE_LIST[p.stored_data_range]))
+
         except Exception as ex:
             print("Error: {}".format(ex))
     if DEBUG:

@@ -1,8 +1,5 @@
-<!-- # scrape_prometheus
-Functions to scrape data from Prometheus and maybe be able to store to an object storage (like CEPH) -->
-
 # Scrape Prometheus
-This python application has been written to scrape data from Prometheus and store it to a long term block storage like CEPH or S3 as JSON objects. So the data can be used and processed at a later time more easily. It also contains templates to be run as a CronJob or as a single one time pod on OpenShift.
+This python application has been written to scrape data from Prometheus and store it to a long term block storage like CEPH or S3 as json.bz2 objects. So the data can be used and processed at a later time more easily. It also contains templates to be run as a scheduled cronjob or as a single one time pod on OpenShift.
 
 ## Getting Started
 
@@ -27,7 +24,7 @@ After setting up the credentials in your Makefile, to test if Prometheus credent
 ```
 make run_list_metrics
 ```
-This will list all the metrics that are stored on the Prometheus host.
+This will list all the metrics that are stored on the Prometheus host. If it doesn't check your credentials.
 
 Next, to backup the previous day's metrics data to a long term block storage, run the following command:
 ```
@@ -48,6 +45,7 @@ Your output should be something like below:
 ```
 usage: app.py [-h] [--day DAY] [--url URL] [--token TOKEN] [--backup-all]
               [--list-metrics] [--chunk-size CHUNK_SIZE]
+              [--stored-data-range STORED_DATA_RANGE] [--debug] [--replace]
               [metric [metric ...]]
 
 Backup Prometheus metrics
@@ -67,16 +65,34 @@ optional arguments:
   --list-metrics        List metrics from prometheus
   --chunk-size CHUNK_SIZE
                         Size of the chunk downloaded at an instance. Accepted
-                        values are 1m, 1h, 1d default: 1h
+                        values are 30m, 1h, 6h, 12h, 1d default: 1h. This
+                        value cannot be bigger than stored-data-range.
+  --stored-data-range STORED_DATA_RANGE
+                        Size of the data stored to the storage endpoint. For
+                        example, 6h will divide the 24 hour data in 4 parts of
+                        6 hours. Accepted values are 30m, 1h, 6h, 12h, 1d
+                        default: 6h
+  --debug               Enable Debug Mode
+  --replace             Replace existing file with the current
 
 ```
+If the docker image is functional, you can run the following command:
+```
+make docker_run
+```
+and this will start backing up all of your metrics.
 
 ## Deploying on OpenShift
 
 * ### Deploying a single time running pod:
   In the Makefile set up the required variables, and then run the following command:
 ```
-make oc_job_run
+make oc_build_image
+```
+  This will create an image for this application on openshift, which you can use with different sets of credentials.
+  Then run:
+```
+make oc_run_job
 ```
 This will run a pod on openshift which will backup a day's (24 Hours) of data for all the metrics from the specified Prometheus Host to the block storage.
 

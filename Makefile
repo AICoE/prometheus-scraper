@@ -20,21 +20,6 @@ docker_build:
 docker_test:
 	docker run ${docker_app_name}
 
-oc_build_image:
-	oc new-app --file=./scrape-prometheus-image-build-template.yaml --param APPLICATION_NAME="${oc_build_image_name}"
-	sleep 5s	# wait for the image to build
-
-
-oc_job_run:
-	oc new-app --file=./scrape-prometheus-job-template.yaml --param APPLICATION_NAME="${oc_single_job_app_name}" \
-			--param BUILD_IMAGE="${oc_build_image_name}" \
-			--param URL="${prometheus_url}" \
-			--param BEARER_TOKEN="${bearer_token}" \
-			--param BOTO_ACCESS_KEY="${block_storage_access_key}" \
-			--param BOTO_SECRET_KEY="${block_storage_secret_key}" \
-			--param BOTO_OBJECT_STORE="${block_storage_bucket_name}" \
-			--param BOTO_STORE_ENDPOINT="${block_storage_endpoint_url}"
-
 docker_run:
 	docker run -ti --rm \
 	   --env "BEARER_TOKEN=${bearer_token}" \
@@ -46,11 +31,26 @@ docker_run:
 		 --env BOTO_STORE_ENDPOINT="${block_storage_endpoint_url}" \
 	   scrape_prometheus:latest
 
+oc_build_image:
+	oc new-app --file=./scrape-prometheus-image-build-template.yaml --param APPLICATION_NAME="${oc_build_image_name}"
+	sleep 5s	# wait for the image to build
+
+
+oc_run_job:
+	oc new-app --file=./scrape-prometheus-job-template.yaml --param APPLICATION_NAME="${oc_single_job_app_name}" \
+			--param BUILD_IMAGE="${oc_build_image_name}" \
+			--param URL="${prometheus_url}" \
+			--param BEARER_TOKEN="${bearer_token}" \
+			--param BOTO_ACCESS_KEY="${block_storage_access_key}" \
+			--param BOTO_SECRET_KEY="${block_storage_secret_key}" \
+			--param BOTO_OBJECT_STORE="${block_storage_bucket_name}" \
+			--param BOTO_STORE_ENDPOINT="${block_storage_endpoint_url}"
+
 oc_add_template:
 	oc create -f ./scrape-prometheus-template.yaml
 	oc replace -f ./scrape-prometheus-template.yaml
 
-oc_cron_job_run:
+oc_run_cronjob:
 	oc new-app --file=./scrape-prometheus-cronjob-template.yaml --param APPLICATION_NAME="${oc_cronjob_app_name}" \
 	  	--param URL="${prometheus_url}" \
 	  	--param SCHEDULE="${cron_schedule}" \
@@ -59,6 +59,15 @@ oc_cron_job_run:
 			--param BOTO_SECRET_KEY="${block_storage_secret_key}" \
 			--param BOTO_OBJECT_STORE="${block_storage_bucket_name}" \
 			--param BOTO_STORE_ENDPOINT="${block_storage_endpoint_url}" \
+
+oc_delete_image:
+	oc delete all -l app=${oc_build_image_name}
+
+oc_delete_job:
+	oc delete all -l app=${oc_single_job_app_name}
+
+oc_delete_cronjob:
+	oc delete all -l app=${oc_cronjob_app_name}
 
 run_list_metrics:
 	BEARER_TOKEN=${bearer_token} \
@@ -86,9 +95,3 @@ run_backup_one_metric:
 	BOTO_OBJECT_STORE=${block_storage_bucket_name} \
 	BOTO_STORE_ENDPOINT=${block_storage_endpoint_url} \
 	python3 ./app.py flask_request_count
-
-oc_job_delete:
-	oc delete all -l app=${oc_single_job_app_name}
-
-oc_cronjob_delete:
-	oc delete all -l app=${oc_cronjob_app_name}

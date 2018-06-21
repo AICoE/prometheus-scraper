@@ -20,10 +20,14 @@ docker_build:
 docker_test:
 	docker run ${docker_app_name}
 
+oc_build_image:
+	oc new-app --file=./scrape-prometheus-image-build-template.yaml --param APPLICATION_NAME="${oc_build_image_name}"
+	sleep 5s	# wait for the image to build
+
+
 oc_job_run:
-	oc new-app --file=./scrape-prometheus-image-build-template.yaml --param APPLICATION_NAME="${oc_single_job_app_name}"
-	sleep 20s	# wait for the image to build
 	oc new-app --file=./scrape-prometheus-job-template.yaml --param APPLICATION_NAME="${oc_single_job_app_name}" \
+			--param BUILD_IMAGE="${oc_build_image_name}" \
 			--param URL="${prometheus_url}" \
 			--param BEARER_TOKEN="${bearer_token}" \
 			--param BOTO_ACCESS_KEY="${block_storage_access_key}" \
@@ -72,7 +76,16 @@ run_backup_all_metrics:
 	BOTO_SECRET_KEY=${block_storage_secret_key} \
 	BOTO_OBJECT_STORE=${block_storage_bucket_name} \
 	BOTO_STORE_ENDPOINT=${block_storage_endpoint_url} \
-	python3 ./app.py --backup-all
+	python3 ./app.py --backup-all --debug
+
+run_backup_one_metric:
+	BEARER_TOKEN=${bearer_token} \
+	URL=${prometheus_url} \
+	BOTO_ACCESS_KEY=${block_storage_access_key} \
+	BOTO_SECRET_KEY=${block_storage_secret_key} \
+	BOTO_OBJECT_STORE=${block_storage_bucket_name} \
+	BOTO_STORE_ENDPOINT=${block_storage_endpoint_url} \
+	python3 ./app.py flask_request_count
 
 oc_job_delete:
 	oc delete all -l app=${oc_single_job_app_name}

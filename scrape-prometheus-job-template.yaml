@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: scrape-prometheus-job
+  name: scrape-prometheus-single-job
 
 
 objects:
@@ -20,17 +20,13 @@ objects:
       spec:
         containers:
         - name: ${APPLICATION_NAME}
-          image: ${APPLICATION_NAME}:latest
-#          image: 172.30.1.1:5000/local/insights-ds-parsers-cronjob # minishift doesn't have default
+          image: ${BUILD_IMAGE}:latest
           imagePullPolicy: Always
-          # envFrom:
-          #   - secretRef:
-          #       name: insights-ds-analysis # use secret from application
           resources:
             requests:
               memory: 500Mi
             limits:
-              memory: 8Gi
+              memory: 16Gi
           env:
           - name: PROM_BACKUP_ALL
             value: "true"
@@ -54,6 +50,9 @@ parameters:
   generate: expression
   name: APPLICATION_NAME
   required: true
+- name: BUILD_IMAGE
+  description: Image that the job will use
+  required: true
 - name: URL
   description: URL of prometheus server
   required: true
@@ -73,5 +72,5 @@ parameters:
   description: The URL to connect to the CEPH storage (or any similar S3 type storage)
   required: true
 - name: GIT_URI
-  value: "https://gitlab.cee.redhat.com/asanmukh/scrape_prometheus.git"
+  value: https://gitlab.cee.redhat.com/asanmukh/scrape_prometheus.git
   required: true

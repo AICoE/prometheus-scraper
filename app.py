@@ -1,4 +1,3 @@
-# http://jamesthom.as/blog/2017/04/27/python-packages-in-openwhisk/
 #! /usr/bin/python3
 import argparse
 import bz2

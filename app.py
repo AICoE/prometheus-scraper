@@ -1,3 +1,4 @@
+# http://jamesthom.as/blog/2017/04/27/python-packages-in-openwhisk/
 #! /usr/bin/python3
 import argparse
 import bz2
@@ -364,10 +365,14 @@ if __name__ == '__main__':
                 else:
                     # print("scraping metric: ",metric)
                     values = p.get_metric(metric)
+                    response = p.store_metric_values(metric, values)
+                    print(response)
+                    if response == "No values for {}".format(metric):
+                        break
                     print("Part {}/{}...metric collected".format(parts+1, num_of_file_parts))
                     # print("Metrics-> ",metric,json.dumps(json.loads(values), indent = 4, sort_keys = True))
 
-                    print(p.store_metric_values(metric, values))
+
                     del values
                 p.end_time = datetime.datetime.fromtimestamp(p.end_time.timestamp() - int(p.DATA_CHUNK_SIZE_LIST[p.stored_data_range]))
 

@@ -1,4 +1,3 @@
-# http://jamesthom.as/blog/2017/04/27/python-packages-in-openwhisk/
 #! /usr/bin/python3
 import argparse
 import bz2
@@ -48,6 +47,7 @@ class PrometheusBackup:
             60 : '1m',
             1800 : '30m',
             3600 : '1h',
+            10800: '3h',
             21600: '6h',
             43200: '12h',
             86400 : '1d'}
@@ -55,6 +55,7 @@ class PrometheusBackup:
             '1m' : 60,
             '30m': 1800,
             '1h' : 3600,
+            '3h' : 10800,
             '6h' : 21600,
             '12h': 43200,
             '1d' : 86400}
@@ -155,45 +156,6 @@ class PrometheusBackup:
         if metrics:
             return metrics
 
-    def get_metric_chunk_from_prom(self, name, chunks, end_timestamp):
-        tries = 0
-        while tries < MAX_REQUEST_RETRIES:  # Retry code in case of errors
-            response = requests.get('{0}/api/v1/query'.format(self.url),    # using the query API to get raw data
-                                    params={'query': name+'['+self.data_chunk_size+']',
-                                            'time': start
-                                            },
-                                    verify=False, # Disable ssl certificate verification temporarily
-                                    headers=self.headers)
-            # print(response.url)
-            tries+=1
-            if response.status_code == 200:
-                data += response.json()['data']['result']
-
-                if DEBUG:
-                    print("Size of recent chunk = ",getsizeof(data))
-                    pass
-
-                del response
-                tries = MAX_REQUEST_RETRIES
-            elif response.status_code == 504:
-                if tries >= MAX_REQUEST_RETRIES:
-                    self.connection_errors_count+=1
-                    return False
-                else:
-                    print("Retry Count: ",tries)
-                    sleep(CONNECTION_RETRY_WAIT_TIME)    # Wait for a second before making a new request
-            else:
-                if tries >= MAX_REQUEST_RETRIES:
-                    self.connection_errors_count+=1
-                    raise Exception("HTTP Status Code {} {} ({})".format(
-                        response.status_code,
-                        requests.status_codes._codes[response.status_code][0],
-                        response.content
-                    ))
-                else:
-                    print("Retry Count: ",tries)
-                    sleep(CONNECTION_RETRY_WAIT_TIME)
-        pass
     def get_metrics_from_prom(self, name, chunks):
         if not name in self.all_metrics():
             raise Exception("{} is not a valid metric".format(name))
@@ -298,8 +260,8 @@ if __name__ == '__main__':
                         help='Name of the metric, e.g. ALERTS - or --backup-all')
     parser.add_argument('--chunk-size', type=str, default='1h',
                         help='Size of the chunk downloaded at an instance. Accepted values are 30m, 1h, 6h, 12h, 1d default: %(default)s. This value cannot be bigger than stored-data-range.')
-    parser.add_argument('--stored-data-range', type=str, default='6h',
-                        help='Size of the data stored to the storage endpoint. For example, 6h will divide the 24 hour data in 4 parts of 6 hours. Accepted values are 30m, 1h, 6h, 12h, 1d default: %(default)s')
+    parser.add_argument('--stored-data-range', type=str, default='3h',
+                        help='Size of the data stored to the storage endpoint. For example, 6h will divide the 24 hour data in 4 parts of 6 hours. Accepted values are 30m, 1h, 3h, 6h, 12h, 1d default: %(default)s')
     parser.add_argument('--debug', action='store_true',
                         help="Enable Debug Mode")
     parser.add_argument('--replace', action='store_true',
@@ -365,14 +327,10 @@ if __name__ == '__main__':
                 else:
                     # print("scraping metric: ",metric)
                     values = p.get_metric(metric)
-                    response = p.store_metric_values(metric, values)
-                    print(response)
-                    if response == "No values for {}".format(metric):
-                        break
                     print("Part {}/{}...metric collected".format(parts+1, num_of_file_parts))
                     # print("Metrics-> ",metric,json.dumps(json.loads(values), indent = 4, sort_keys = True))
 
-
+                    print(p.store_metric_values(metric, values))
                     del values
                 p.end_time = datetime.datetime.fromtimestamp(p.end_time.timestamp() - int(p.DATA_CHUNK_SIZE_LIST[p.stored_data_range]))
 

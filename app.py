@@ -112,9 +112,9 @@ class PrometheusBackup:
         '''
         Adds a timestamp to the filename before it is stored in ceph
         '''
-        directory_name = self.end_time.strftime("%Y%m%d")
+        # directory_name = self.end_time.strftime("%Y%m%d")
         timestamp = self.end_time.strftime("%Y%m%d%H%M")
-        object_path = self.prometheus_host + '/' + name + '/' + directory_name + '/' + timestamp + '.json.bz2'
+        object_path = self.prometheus_host + '/' + name + '/' + timestamp + '.json.bz2'
         return object_path
 
     def all_metrics(self):

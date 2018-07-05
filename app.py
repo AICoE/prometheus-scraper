@@ -312,10 +312,14 @@ if __name__ == '__main__':
     num_of_file_parts = int(NET_DATA_SIZE/(p.DATA_CHUNK_SIZE_LIST[p.stored_data_range]))
     temp_end_time = p.end_time
 
+    current_metric_num = 0
+    total_num_metrics = len(metrics)
     for metric in metrics:
         try:
-            print("\n")
-            print(metric)
+            current_metric_num += 1
+            print("\n---------------------------------------")
+            print(("{} of {}.......".format(current_metric_num, total_num_metrics)), metric)
+            # print(metric)
             p.end_time = temp_end_time
 
             for parts in range(num_of_file_parts):

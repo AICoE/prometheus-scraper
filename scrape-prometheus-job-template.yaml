@@ -5,72 +5,72 @@ metadata:
 
 
 objects:
-- apiVersion: batch/v1
-  kind: Job
-  metadata:
-    name: ${APPLICATION_NAME}
-    labels:
-      app: ${APPLICATION_NAME}
-  spec:
-    parallelism: 1
-    completions: 1
-    template:
-      metadata:
-        name: ${APPLICATION_NAME}
-      spec:
-        containers:
-        - name: ${APPLICATION_NAME}
-          image: ${BUILD_IMAGE}:latest
-          imagePullPolicy: Always
-          resources:
-            requests:
-              memory: 500Mi
-            limits:
-              memory: 16Gi
-          env:
-          - name: PROM_BACKUP_ALL
-            value: "true"
-          - name: BEARER_TOKEN
-            value: "${BEARER_TOKEN}"
-          - name: URL
-            value: "${URL}"
-          - name: BOTO_ACCESS_KEY
-            value: "${BOTO_ACCESS_KEY}"
-          - name: BOTO_SECRET_KEY
-            value: "${BOTO_SECRET_KEY}"
-          - name: BOTO_OBJECT_STORE
-            value: "${BOTO_OBJECT_STORE}"
-          - name: BOTO_STORE_ENDPOINT
-            value: "${BOTO_STORE_ENDPOINT}"
-        restartPolicy: Never
+  - apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: ${APPLICATION_NAME}
+      labels:
+        app: ${APPLICATION_NAME}
+    spec:
+      parallelism: 1
+      completions: 1
+      template:
+        metadata:
+          name: ${APPLICATION_NAME}
+        spec:
+          containers:
+            - name: ${APPLICATION_NAME}
+              image: ${BUILD_IMAGE}:latest
+              imagePullPolicy: Always
+              resources:
+                requests:
+                  memory: 500Mi
+                limits:
+                  memory: 16Gi
+              env:
+                - name: PROM_BACKUP_ALL
+                  value: "true"
+                - name: BEARER_TOKEN
+                  value: "${BEARER_TOKEN}"
+                - name: URL
+                  value: "${URL}"
+                - name: BOTO_ACCESS_KEY
+                  value: "${BOTO_ACCESS_KEY}"
+                - name: BOTO_SECRET_KEY
+                  value: "${BOTO_SECRET_KEY}"
+                - name: BOTO_OBJECT_STORE
+                  value: "${BOTO_OBJECT_STORE}"
+                - name: BOTO_STORE_ENDPOINT
+                  value: "${BOTO_STORE_ENDPOINT}"
+          restartPolicy: Never
 
 parameters:
-- description: The name for job
-  from: 'scrape-prometheus-[a-z0-9]{4}'
-  generate: expression
-  name: APPLICATION_NAME
-  required: true
-- name: BUILD_IMAGE
-  description: Image that the job will use
-  required: true
-- name: URL
-  description: URL of prometheus server
-  required: true
-- name: BEARER_TOKEN
-  description: Bearer Token for accessing prometheus
-  required: true
-- name: BOTO_ACCESS_KEY
-  description: Access key to connect to CEPH endpoint storage (or any similar S3 type storage)
-  required: true
-- name: BOTO_SECRET_KEY
-  description: Secret key to connect to CEPH endpoint storage (or any similar S3 type storage)
-  required: true
-- name: BOTO_OBJECT_STORE
-  description: Bucket Name on CEPH  (or any similar S3 type storage)
-  required: true
-- name: BOTO_STORE_ENDPOINT
-  description: The URL to connect to the CEPH storage (or any similar S3 type storage)
-  required: true
-- name: GIT_URI
-  value: https://gitlab.cee.redhat.com/asanmukh/scrape_prometheus.git
-  required: true
+  - description: The name for job
+    from: 'scrape-prometheus-[a-z0-9]{4}'
+    generate: expression
+    name: APPLICATION_NAME
+    required: true
+  - name: BUILD_IMAGE
+    description: Image that the job will use
+    required: true
+  - name: URL
+    description: URL of prometheus server
+    required: true
+  - name: BEARER_TOKEN
+    description: Bearer Token for accessing prometheus
+    required: true
+  - name: BOTO_ACCESS_KEY
+    description: Access key to connect to CEPH endpoint storage (or any similar S3 type storage)
+    required: true
+  - name: BOTO_SECRET_KEY
+    description: Secret key to connect to CEPH endpoint storage (or any similar S3 type storage)
+    required: true
+  - name: BOTO_OBJECT_STORE
+    description: Bucket Name on CEPH  (or any similar S3 type storage)
+    required: true
+  - name: BOTO_STORE_ENDPOINT
+    description: The URL to connect to the CEPH storage (or any similar S3 type storage)
+    required: true
+  - name: GIT_URI
+    value: https://gitlab.cee.redhat.com/asanmukh/scrape_prometheus.git
+    required: true
